@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вернатун: Конструктор Встреч</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --panel: #1E1E1E;
+            --border: #333;
+            --primary: #FF9F1C; /* Orange */
+            --secondary: #2EC4B6; /* Blue */
+            --accent: #E71D36; /* Red */
+            --text: #F5F5F5;
+            --text-muted: #A0A0A0;
+            --card-hover: #2a2a2a;
+            --tab-active-bg: #2D2D2D;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* HEADER */
+        header {
+            height: 70px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        
+        .brand { display: flex; align-items: center; gap: 15px; }
+        .logo-box { 
+            width: 40px; height: 40px; background: var(--primary); color: #000; 
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.5rem; font-weight: bold; 
+        }
+        h1 { font-size: 1.2rem; color: var(--text); text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
+        h1 span { color: var(--primary); font-size: 0.8em; display: block; }
+
+        .controls { display: flex; gap: 20px; align-items: center; }
+        
+        /* TABS */
+        .tabs { display: flex; background: #000; border-radius: 8px; padding: 4px; gap: 5px; }
+        .tab-btn {
+            background: none; border: none; color: var(--text-muted); 
+            padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { background: var(--tab-active-bg); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* Toggle Switch */
+        .switch-container { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; border-left: 1px solid #444; padding-left: 20px; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--secondary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        button.btn-reset {
+            background: none; border: 1px solid #555; color: #888;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+        }
+        button.btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* MAIN LAYOUT */
+        .main-container { display: flex; height: calc(100vh - 70px); }
+
+        /* LIBRARY (LEFT) */
+        .library {
+            width: 320px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: width 0.3s;
+            flex-shrink: 0;
+        }
+        .library.hidden { width: 0; padding: 0; border: none; }
+        .lib-header { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; letter-spacing: 0.5px; }
+        
+        /* Draggable Card */
+        .activity-card {
+            background: #2D2D2D;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary);
+            cursor: grab;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s, background 0.2s;
+            user-select: none;
+            position: relative;
+        }
+        .activity-card:hover { transform: translateY(-2px); background: #353535; }
+        .activity-card:active { cursor: grabbing; }
+        .activity-card h4 { margin-bottom: 4px; pointer-events: none; color: #fff; font-size: 0.95rem; }
+        .activity-card .tag { font-size: 0.7rem; color: var(--text-muted); pointer-events: none; display: inline-block; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+        .activity-card .preview-text { font-size: 0.75rem; color: #888; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
+        
+        /* TIMETABLE (RIGHT) */
+        .timetable { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; background: #161616; }
+        
+        .grid-header {
+            display: grid;
+            grid-template-columns: 70px 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--secondary);
+            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: #161616;
+            z-index: 10;
+            padding-bottom: 5px;
+        }
+        .col-header { background: #252525; padding: 10px; border-radius: 6px; border-bottom: 2px solid #333; }
+        
+        /* Time Row */
+        .time-row {
+            display: grid;
+            grid-template-columns: 70px 1fr 1fr 1fr;
+            gap: 10px;
+            min-height: 110px;
+            border-top: 1px solid #222;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+        
+        .time-label {
+            display: flex; align-items: flex-start; justify-content: center; padding-top: 10px;
+            color: var(--text-muted); font-weight: bold; font-family: monospace; font-size: 1.1rem;
+        }
+
+        .drop-zone {
+            background: #1a1a1a;
+            border: 2px dashed #333;
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: background 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .drop-zone.drag-over { background: #252525; border-color: var(--primary); }
+        
+        /* Parallel Zone Styling */
+        .zone-common { border-color: #444; }
+        .zone-a { background: rgba(46, 196, 182, 0.03); border-color: rgba(46, 196, 182, 0.15); }
+        .zone-b { background: rgba(255, 159, 28, 0.03); border-color: rgba(255, 159, 28, 0.15); }
+
+        /* Card inside Dropzone */
+        .drop-zone .activity-card {
+            margin: 0;
+            border-left-width: 4px;
+        }
+        .delete-btn {
+            position: absolute; top: 4px; right: 4px;
+            color: #ff5555; cursor: pointer; display: none; font-size: 14px;
+            background: rgba(0,0,0,0.6); border-radius: 50%; width: 20px; height: 20px;
+            align-items: center; justify-content: center; z-index: 5;
+        }
+        .drop-zone .activity-card:hover .delete-btn { display: flex; }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+        .modal {
+            background: var(--panel);
+            width: 600px;
+            max-width: 90%;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: modalFadeIn 0.2s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal h2 { color: var(--primary); margin-bottom: 5px; font-size: 1.5rem; }
+        .modal .meta { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; display: flex; gap: 10px; }
+        .modal .meta span { background: #333; padding: 2px 8px; border-radius: 4px; color: #fff; }
+        .modal p { line-height: 1.7; margin-bottom: 15px; font-size: 1.05rem; white-space: pre-wrap; }
+        .close-modal {
+            background: var(--primary); color: #000; border: none;
+            padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; float: right; font-size: 1rem;
+        }
+        .close-modal:hover { background: #ffaf46; }
+
+        /* Read Only Mode Styles */
+        body.read-only .library { display: none; }
+        body.read-only .delete-btn { display: none !important; }
+        body.read-only .drop-zone { border-style: solid; border-color: #222; }
+        
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <div class="logo-box">🏛️</div>
+        <h1>Вернатун<br><span>Армянский клуб</span></h1>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tue')" id="btn-tue">Вторник (Talk)</button>
+        <button class="tab-btn" onclick="switchTab('sat')" id="btn-sat">Суббота (Chill)</button>
+    </div>
+
+    <div class="controls">
+        <button class="btn-reset" onclick="clearSchedule()">Очистить</button>
+        <div class="switch-container">
+            <span>Просмотр</span>
+            <label class="switch">
+                <input type="checkbox" id="adminToggle" checked onchange="toggleMode()">
+                <span class="slider"></span>
+            </label>
+            <span>Редактор</span>
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <!-- LIBRARY (Draggable Items) -->
+    <div class="library" id="library">
+        <!-- Items will be injected by JS -->
+    </div>
+
+    <!-- TIMETABLE -->
+    <div class="timetable" id="timetable">
+        <div class="grid-header">
+            <div>Время</div>
+            <div class="col-header">Общий Зал<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Разминка / Финал</span></div>
+            <div class="col-header" style="border-bottom-color: var(--secondary)">Level A<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Новички / База</span></div>
+            <div class="col-header" style="border-bottom-color: var(--primary)">Level B<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Профи / Носители</span></div>
+        </div>
+        
+        <!-- Rows Generated by JS -->
+    </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <h2 id="m-title">Название</h2>
+        <div class="meta" id="m-meta"></div>
+        <p id="m-desc">Описание...</p>
+        <button class="close-modal" onclick="closeModal()">Закрыть</button>
+    </div>
+</div>
+
+<script>
+    // --- 1. STATE & DATA ---
+    let currentTab = 'tue'; // 'tue' or 'sat'
+
+    const activities = [
+        // Warmup (Разогрев)
+        { 
+            id: 'ice1', title: 'Speed Dating', type: 'Warmup', color: '#ff7675', 
+            desc: 'Динамичное упражнение на снятие барьеров.\n\nМеханика:\nУчастники образуют два круга (внешний и внутренний). Каждые 2 минуты внешний круг сдвигается на одного человека. На проектор выводятся вопросы для обсуждения, например: "Твой любимый район Еревана и почему?", "Какое армянское блюдо ты готовил последним?".\n\nЦель: Быстро разговорить группу и познакомить всех.' 
+        },
+        { 
+            id: 'ice2', title: 'Две правды, одна ложь', type: 'Warmup', color: '#ff7675', 
+            desc: 'Классическая игра на знакомство.\n\nМеханика:\nКаждый участник пишет на листочке 3 факта о себе (2 правдивых, 1 вымышленный). Остальные задают наводящие вопросы на армянском (только Yes/No questions), пытаясь раскрыть ложь.\n\nЛексика: Вопросительные конструкции, глаголы действия.' 
+        },
+        { 
+            id: 'ice3', title: 'Human Bingo', type: 'Warmup', color: '#ff7675', 
+            desc: 'Активный поиск людей по критериям.\n\nМеханика:\nКаждый получает карточку с сеткой 4x4. В клетках написаны факты: "Умеет играть на дудуке", "Был в Гюмри", "Любит кинзу". Задача: ходить по залу, опрашивать людей на армянском и вписывать имена тех, кто соответствует описанию.\n\nЦель: Собрать линию (Bingo) первым.' 
+        },
+        { 
+            id: 'ice4', title: 'Снежный ком имен', type: 'Warmup', color: '#ff7675', 
+            desc: 'Тренировка памяти и имен.\n\nМеханика:\nПервый говорит: "Я Армен, люблю абрикосы". Второй: "Это Армен, он любит абрикосы, а я Ани, люблю Арарат". Третий должен повторить двоих предыдущих и добавить себя.\n\nСовет: Добавлять прилагательные на ту же букву, что и имя.' 
+        },
+
+        // Speaking Active
+        { 
+            id: 'sp1', title: 'Ролевая: Разговорчивый таксист', type: 'Speaking', color: '#74b9ff', 
+            desc: 'Симуляция жизненной ситуации.\n\nРоли:\n1. Таксист (должен узнать о пассажире всё: женат/замужем, где работает, сколько получает).\n2. Пассажир (спешит, отвечает коротко, но вежливо).\n\nЗадача: Таксист должен составить досье на пассажира за 5 минут поездки.' 
+        },
+        { 
+            id: 'sp2', title: 'Ролевая: Торг на Вернисаже', type: 'Speaking', color: '#74b9ff', 
+            desc: 'Практика числительных и убеждения.\n\nРоли:\n1. Продавец сувениров (завышает цену в 3 раза).\n2. Турист (хочет купить дешевле).\n\nЗадача: Договориться о финальной цене. Используем фразы: "Tang e" (Дорого), "Ijecreq gine" (Скиньте цену).' 
+        },
+        { 
+            id: 'sp3', title: 'Шуточные Дебаты', type: 'Speaking', color: '#74b9ff', 
+            desc: 'Аргументация в веселом формате.\n\nТемы:\n- Лаваш лучше матнакаша?\n- Долма с виноградными листьями или капустой?\n- Жить с родителями: за и против.\n\nМеханика: Группа делится на команды. Дается 5 минут на подготовку аргументов. Модератор следит за таймингом.' 
+        },
+        { 
+            id: 'sp4', title: 'Alibi (Детектив)', type: 'Speaking', color: '#74b9ff', 
+            desc: 'Игра на внимательность к деталям.\n\nМеханика:\nДвое "подозреваемых" выходят из комнаты и придумывают алиби (что они делали вчера с 18:00 до 20:00). Группа "следователей" допрашивает их ПО ОТДЕЛЬНОСТИ. Любое несовпадение в показаниях означает проигрыш.\n\nВопросы: Во что был одет? Что заказывали? Кто платил?' 
+        },
+        { 
+            id: 'sp5', title: 'Интервью со звездой', type: 'Speaking', color: '#74b9ff', 
+            desc: 'Один участник вживается в роль знаменитости (Шер, Азнавур, Ким, Пашинян). Остальные - журналисты на пресс-конференции.\n\nЦель: Задавать каверзные вопросы.' 
+        },
+
+        // Games
+        { 
+            id: 'gm1', title: 'Mafia (Armenian)', type: 'Game', color: '#a29bfe', 
+            desc: 'Легендарная игра, адаптированная под клуб.\n\nПравило №1: НИ СЛОВА ПО-РУССКИ. Штраф - вылет из игры.\n\nФразы:\n- "Es kaskatsum em..." (Я подозреваю)\n- "Na stum e" (Он/она врет)\n- "Qaxaqe qnac e" (Город спит)\n\nРазвивает навыки убеждения и оправдания.' 
+        },
+        { 
+            id: 'gm2', title: 'Alias / Taboo', type: 'Game', color: '#a29bfe', 
+            desc: 'Объяснение слов на время.\n\nМеханика:\nИгрок берет карточку и должен объяснить слово, не используя однокоренные. Например, объяснить слово "Севан", не говоря "Озеро", "Вода", "Рыба".\n\nДинамично, весело, расширяет словарный запас.' 
+        },
+        { 
+            id: 'gm3', title: 'Just a Minute', type: 'Game', color: '#a29bfe', 
+            desc: 'Ораторское искусство.\n\nЗадача:\nГоворить на выпавшую тему (например, "Абрикос", "Метро", "Свадьба") ровно 1 минуту. Нельзя: делать паузы больше 3 сек, повторять слова, использовать слова-паразиты.' 
+        },
+        { 
+            id: 'gm4', title: 'Крокодил (Пантомима)', type: 'Game', color: '#a29bfe', 
+            desc: 'Показать слово или пословицу жестами. Группа должна угадать и назвать это на армянском.' 
+        },
+
+        // Media
+        { 
+            id: 'med1', title: 'Кино-озвучка', type: 'Media', color: '#fdcb6e', 
+            desc: 'Творческое задание.\n\nМеханика:\nБерем сцену из "Мужчины" (Tghamardik) или "Мимино". Смотрим оригинал. Выключаем звук. Участники получают текст или импровизируют, озвучивая героев в микрофон. Можно менять жанр (превратить драму в комедию).' 
+        },
+        { 
+            id: 'med2', title: 'Разбор Клипа', type: 'Media', color: '#fdcb6e', 
+            desc: 'Работа с текстом песни.\n\nМатериал: Malena, Sirusho, Aram MP3.\n1. Слушаем.\n2. Читаем текст, разбираем сленг.\n3. Поем припев хором.' 
+        },
+        { 
+            id: 'med3', title: 'Кино-Квиз', type: 'Media', color: '#fdcb6e', 
+            desc: 'Викторина по армянскому кино.\nРаунды:\n- Угадай фильм по кадру.\n- Продолжи цитату.\n- Правда или ложь об актере.' 
+        },
+
+        // Level A (Beginners)
+        { 
+            id: 'beg1', title: 'Алфавит-Ассоциации', type: 'Level A', color: '#55efc4', 
+            desc: 'Для тех, кто не умеет читать.\n\nМетод:\nПоказываем букву и картинку, на что она похожа (Ш - перевернутая М, Ռ - как R на ножках). Рисуем буквы.' 
+        },
+        { 
+            id: 'beg2', title: 'Базовые фразы (Drill)', type: 'Level A', color: '#55efc4', 
+            desc: 'Интенсивное повторение.\n\nТемы:\n- Приветствие / Прощание\n- Как дела?\n- Счет до 100\n- Заказ еды\n\nРаботаем хором и по парам.' 
+        },
+        { 
+            id: 'beg3', title: 'Чтение сказки', type: 'Level A', color: '#55efc4', 
+            desc: 'Медленное чтение.\n\nМатериал: Адаптированные сказки Ованеса Туманяна. Читаем по предложению, переводим каждое слово.' 
+        },
+
+        // Level B (Advanced)
+        { 
+            id: 'adv1', title: 'Полит. Дебаты', type: 'Level B', color: '#fab1a0', 
+            desc: 'Для продвинутых и носителей.\n\nОбсуждение актуальных новостей Армении и мира. Запрещено использовать примитивную лексику. Модератор вбрасывает сложные термины, которые нужно использовать.' 
+        },
+        { 
+            id: 'adv2', title: 'Угадай Диалект', type: 'Level B', color: '#fab1a0', 
+            desc: 'Аудирование сложного уровня.\n\nСлушаем аудиозаписи речи из Гюмри, Арцаха, Гавара, Лори. Пытаемся понять смысл и "перевести" на литературный армянский.' 
+        },
+        { 
+            id: 'adv3', title: 'Литературный клуб', type: 'Level B', color: '#fab1a0', 
+            desc: 'Чтение поэзии.\n\nАвторы: Паруйр Севак, Егише Чаренц. Анализ метафор и глубокого смысла.' 
+        }
+    ];
+
+    // --- 2. INIT & RENDER ---
+    const libraryEl = document.getElementById('library');
+    const timetableEl = document.getElementById('timetable');
+    
+    // Fill Library
+    function renderLibrary() {
+        // Group by type helper
+        const groups = {
+            'Warmup': [], 'Speaking': [], 'Game': [], 'Media': [], 'Level A': [], 'Level B': []
+        };
+        
+        activities.forEach(act => {
+            if (groups[act.type]) groups[act.type].push(act);
+        });
+
+        const sectionOrder = ['Warmup', 'Speaking', 'Game', 'Media', 'Level A', 'Level B'];
+        const sectionTitles = {
+            'Warmup': '🔥 Упражнения на разогрев', 
+            'Speaking': '🗣️ Активная практика', 
+            'Game': '🎲 Игры', 
+            'Media': '🎬 Медиа / Кино', 
+            'Level A': '🌱 Для Новичков (A1)', 
+            'Level B': '🦁 Для Профи (B2+)'
+        };
+
+        libraryEl.innerHTML = '<div style="font-size: 0.8rem; color: #888; margin-bottom: 10px; text-align: center;">Тяни карточку в расписание ➔</div>';
+
+        sectionOrder.forEach(type => {
+            if (groups[type].length > 0) {
+                const header = document.createElement('div');
+                header.className = 'lib-header';
+                header.innerText = sectionTitles[type];
+                libraryEl.appendChild(header);
+
+                groups[type].forEach(act => {
+                    const el = createCardElement(act);
+                    libraryEl.appendChild(el);
+                });
+            }
+        });
+    }
+
+    function createCardElement(act, inGrid = false) {
+        const div = document.createElement('div');
+        div.className = 'activity-card';
+        div.draggable = true;
+        div.dataset.id = act.id;
+        div.style.borderLeftColor = act.color;
+        
+        // Preview text is only shown in library, not in grid to save space
+        const preview = inGrid ? '' : `<div class="preview-text">${act.desc}</div>`;
+
+        div.innerHTML = `
+            <h4>${act.title}</h4>
+            <div class="tag" style="background:${act.color}40; color:${act.color}">${act.type}</div>
+            ${preview}
+            <div class="delete-btn" onclick="removeCard(this, event)">×</div>
+        `;
+        
+        // Drag Events
+        div.addEventListener('dragstart', handleDragStart);
+        div.addEventListener('click', () => showDetails(act.id));
+        
+        return div;
+    }
+
+    // Updated Time Slots
+    const timeSlots = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
+    
+    function renderGrid() {
+        timetableEl.innerHTML = ''; // Clear existing
+        
+        // Re-add header
+        timetableEl.innerHTML = `
+        <div class="grid-header">
+            <div>Время</div>
+            <div class="col-header">Общий Зал<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Разминка / Финал</span></div>
+            <div class="col-header" style="border-bottom-color: var(--secondary)">Level A<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Новички / База</span></div>
+            <div class="col-header" style="border-bottom-color: var(--primary)">Level B<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Профи / Носители</span></div>
+        </div>`;
+
+        timeSlots.forEach(time => {
+            const row = document.createElement('div');
+            row.className = 'time-row';
+            
+            // Time Label
+            row.innerHTML = `<div class="time-label">${time}</div>`;
+            
+            // 3 Drop Zones
+            const zones = ['common', 'level-a', 'level-b'];
+            zones.forEach(zone => {
+                const dropEl = document.createElement('div');
+                dropEl.className = `drop-zone zone-${zone}`;
+                dropEl.dataset.time = time;
+                dropEl.dataset.zone = zone;
+                
+                // Drag Events
+                dropEl.addEventListener('dragover', handleDragOver);
+                dropEl.addEventListener('dragleave', handleDragLeave);
+                dropEl.addEventListener('drop', handleDrop);
+                
+                row.appendChild(dropEl);
+            });
+            
+            timetableEl.appendChild(row);
+        });
+        loadSchedule(); // Load saved data for current tab
+    }
+
+    // --- 3. DRAG & DROP LOGIC ---
+    let draggedItem = null;
+
+    function handleDragStart(e) {
+        if (!document.getElementById('adminToggle').checked) {
+            e.preventDefault();
+            return;
+        }
+        draggedItem = this;
+        e.dataTransfer.setData('text/plain', this.dataset.id);
+        e.dataTransfer.effectAllowed = 'copy';
+    }
+
+    function handleDragOver(e) {
+        if (!document.getElementById('adminToggle').checked) return;
+        e.preventDefault();
+        this.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        const id = e.dataTransfer.getData('text/plain');
+        const act = activities.find(a => a.id === id);
+        
+        if (act) {
+            // Create a copy of the card for the grid
+            const newCard = createCardElement(act, true);
+            this.appendChild(newCard);
+            saveSchedule();
+        }
+    }
+
+    function removeCard(btn, e) {
+        e.stopPropagation(); // prevent modal opening
+        if (!document.getElementById('adminToggle').checked) return;
+        btn.parentElement.remove();
+        saveSchedule();
+    }
+
+    // --- 4. MODAL LOGIC ---
+    const modal = document.getElementById('modal');
+    
+    function showDetails(id) {
+        const act = activities.find(a => a.id === id);
+        if(!act) return;
+
+        document.getElementById('m-title').innerText = act.title;
+        const metaEl = document.getElementById('m-meta');
+        metaEl.innerHTML = `<span style="background:${act.color}">${act.type}</span>`;
+        
+        document.getElementById('m-desc').innerText = act.desc;
+        document.getElementById('m-title').style.color = act.color;
+        
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // --- 5. TABS & STORAGE ---
+    
+    function switchTab(tab) {
+        currentTab = tab;
+        
+        // Update UI buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${tab}`).classList.add('active');
+        
+        // Reload Grid
+        renderGrid();
+    }
+
+    function toggleMode() {
+        const isAdmin = document.getElementById('adminToggle').checked;
+        if (isAdmin) {
+            document.body.classList.remove('read-only');
+        } else {
+            document.body.classList.add('read-only');
+        }
+    }
+
+    function saveSchedule() {
+        const schedule = [];
+        const rows = document.querySelectorAll('.time-row');
+        
+        rows.forEach(row => {
+            const zones = row.querySelectorAll('.drop-zone');
+            zones.forEach(zone => {
+                const cards = zone.querySelectorAll('.activity-card');
+                cards.forEach(card => {
+                    schedule.push({
+                        time: zone.dataset.time,
+                        zone: zone.dataset.zone,
+                        actId: card.dataset.id
+                    });
+                });
+            });
+        });
+        
+        // Save with key specific to current tab
+        localStorage.setItem(`vernatun_${currentTab}`, JSON.stringify(schedule));
+    }
+
+    function loadSchedule() {
+        const saved = localStorage.getItem(`vernatun_${currentTab}`);
+        if (!saved) return;
+        
+        const schedule = JSON.parse(saved);
+        
+        schedule.forEach(item => {
+            // Find the zone
+            const zoneEl = document.querySelector(`.drop-zone[data-time="${item.time}"][data-zone="${item.zone}"]`);
+            // Find activity data
+            const act = activities.find(a => a.id === item.actId);
+            
+            if (zoneEl && act) {
+                const card = createCardElement(act, true);
+                zoneEl.appendChild(card);
+            }
+        });
+    }
+
+    function clearSchedule() {
+        if(!confirm(`Очистить расписание для вкладки: ${currentTab === 'tue' ? 'Вторник' : 'Суббота'}?`)) return;
+        const zones = document.querySelectorAll('.drop-zone');
+        zones.forEach(z => z.innerHTML = '');
+        localStorage.removeItem(`vernatun_${currentTab}`);
+    }
+
+    // Init
+    renderLibrary();
+    renderGrid();
+
+</script>
+
+</body>
+</html>
