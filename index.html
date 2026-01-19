@@ -2,633 +2,636 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вернатун: Конструктор Встреч</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vernatun: Armenian Club</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #121212;
-            --panel: #1E1E1E;
-            --border: #333;
-            --primary: #FF9F1C; /* Orange */
-            --secondary: #2EC4B6; /* Blue */
-            --accent: #E71D36; /* Red */
-            --text: #F5F5F5;
-            --text-muted: #A0A0A0;
-            --card-hover: #2a2a2a;
-            --tab-active-bg: #2D2D2D;
+            --primary: #d4a373; /* Бежевый песочный */
+            --accent: #e63946; /* Красный гранатовый */
+            --glass-bg: rgba(30, 30, 30, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text: #f1faee;
+            --success: #2a9d8f;
+            --error: #e63946;
+            --sidebar-width: 70px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        body { background-color: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        /* HEADER */
+        body {
+            background-color: #000;
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+            transition: background-image 0.6s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- SIDE NAV --- */
+        .side-nav {
+            z-index: 20; width: var(--sidebar-width); height: 100%;
+            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(15px);
+            border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; align-items: center; padding-top: 20px; flex-shrink: 0;
+        }
+        .nav-item {
+            width: 100%; height: 60px; display: flex; justify-content: center; align-items: center;
+            color: #666; transition: 0.3s; cursor: pointer; position: relative;
+        }
+        .nav-item i { font-size: 1.4rem; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active::before {
+            content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+            background: var(--primary); border-radius: 0 4px 4px 0;
+        }
+
+        .app-content {
+            flex: 1; display: flex; flex-direction: column; position: relative; z-index: 10; height: 100%; overflow: hidden;
+        }
+
         header {
-            height: 70px;
-            background: var(--panel);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(20, 20, 20, 0.3); border-bottom: 1px solid var(--glass-border);
         }
-        
-        .brand { display: flex; align-items: center; gap: 15px; }
-        .logo-box { 
-            width: 40px; height: 40px; background: var(--primary); color: #000; 
-            border-radius: 8px; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.5rem; font-weight: bold; 
-        }
-        h1 { font-size: 1.2rem; color: var(--text); text-transform: uppercase; letter-spacing: 1px; line-height: 1.2; }
-        h1 span { color: var(--primary); font-size: 0.8em; display: block; }
-
-        .controls { display: flex; gap: 20px; align-items: center; }
-        
-        /* TABS */
-        .tabs { display: flex; background: #000; border-radius: 8px; padding: 4px; gap: 5px; }
-        .tab-btn {
-            background: none; border: none; color: var(--text-muted); 
-            padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
-            transition: 0.2s;
-        }
-        .tab-btn:hover { color: var(--text); }
-        .tab-btn.active { background: var(--tab-active-bg); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-        /* Toggle Switch */
-        .switch-container { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; border-left: 1px solid #444; padding-left: 20px; }
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--secondary); }
-        input:checked + .slider:before { transform: translateX(22px); }
-
-        button.btn-reset {
-            background: none; border: 1px solid #555; color: #888;
-            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
-        }
-        button.btn-reset:hover { border-color: var(--accent); color: var(--accent); }
-
-        /* MAIN LAYOUT */
-        .main-container { display: flex; height: calc(100vh - 70px); }
-
-        /* LIBRARY (LEFT) */
-        .library {
-            width: 320px;
-            background: var(--panel);
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            transition: width 0.3s;
-            flex-shrink: 0;
-        }
-        .library.hidden { width: 0; padding: 0; border: none; }
-        .lib-header { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; letter-spacing: 0.5px; }
-        
-        /* Draggable Card */
-        .activity-card {
-            background: #2D2D2D;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid var(--secondary);
-            cursor: grab;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.2s, background 0.2s;
-            user-select: none;
-            position: relative;
-        }
-        .activity-card:hover { transform: translateY(-2px); background: #353535; }
-        .activity-card:active { cursor: grabbing; }
-        .activity-card h4 { margin-bottom: 4px; pointer-events: none; color: #fff; font-size: 0.95rem; }
-        .activity-card .tag { font-size: 0.7rem; color: var(--text-muted); pointer-events: none; display: inline-block; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
-        .activity-card .preview-text { font-size: 0.75rem; color: #888; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; pointer-events: none; }
-        
-        /* TIMETABLE (RIGHT) */
-        .timetable { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; background: #161616; }
-        
-        .grid-header {
-            display: grid;
-            grid-template-columns: 70px 1fr 1fr 1fr;
-            gap: 10px;
-            text-align: center;
-            font-weight: bold;
-            color: var(--secondary);
-            margin-bottom: 10px;
-            position: sticky;
-            top: 0;
-            background: #161616;
-            z-index: 10;
-            padding-bottom: 5px;
-        }
-        .col-header { background: #252525; padding: 10px; border-radius: 6px; border-bottom: 2px solid #333; }
-        
-        /* Time Row */
-        .time-row {
-            display: grid;
-            grid-template-columns: 70px 1fr 1fr 1fr;
-            gap: 10px;
-            min-height: 110px;
-            border-top: 1px solid #222;
-            padding-top: 10px;
-            padding-bottom: 10px;
-        }
-        
-        .time-label {
-            display: flex; align-items: flex-start; justify-content: center; padding-top: 10px;
-            color: var(--text-muted); font-weight: bold; font-family: monospace; font-size: 1.1rem;
+        .brand { font-weight: bold; font-size: 1.1rem; letter-spacing: 1px; }
+        .xp-badge {
+            background: linear-gradient(45deg, #f1c40f, #e67e22); color: #000;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
         }
 
-        .drop-zone {
-            background: #1a1a1a;
-            border: 2px dashed #333;
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: background 0.2s, border-color 0.2s;
-            position: relative;
+        main {
+            flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 50px; scroll-behavior: smooth;
         }
-        .drop-zone.drag-over { background: #252525; border-color: var(--primary); }
+
+        .section { display: none; animation: fadeIn 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { margin-bottom: 20px; color: var(--primary); text-shadow: 0 2px 4px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 10px;}
+
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px;
+            margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- SCHEDULE STYLES --- */
+        .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .schedule-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s;
+            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+            min-height: 140px;
+        }
+        .schedule-card:active { transform: scale(0.98); }
+        .schedule-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--primary); }
+        .sc-date { font-size: 0.8rem; color: #aaa; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .sc-title { font-weight: bold; font-size: 1rem; margin-bottom: 5px; line-height: 1.3; }
+        .sc-loc { font-size: 0.75rem; color: var(--primary); margin-top: auto; display: flex; align-items: center; gap: 5px; }
+
+        /* Table Styles for Schedule */
+        .plan-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem; }
+        .plan-table th, .plan-table td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .plan-table th { color: var(--primary); font-weight: bold; text-transform: uppercase; font-size: 0.8rem; }
+        .plan-table td:first-child { font-family: monospace; color: var(--accent); width: 60px; }
         
-        /* Parallel Zone Styling */
-        .zone-common { border-color: #444; }
-        .zone-a { background: rgba(46, 196, 182, 0.03); border-color: rgba(46, 196, 182, 0.15); }
-        .zone-b { background: rgba(255, 159, 28, 0.03); border-color: rgba(255, 159, 28, 0.15); }
+        /* Admin Inputs */
+        .admin-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .admin-input { background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 8px; border-radius: 6px; flex: 1; outline: none; }
+        .admin-btn-small { background: var(--primary); color: #000; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        /* Card inside Dropzone */
-        .drop-zone .activity-card {
-            margin: 0;
-            border-left-width: 4px;
-        }
-        .delete-btn {
-            position: absolute; top: 4px; right: 4px;
-            color: #ff5555; cursor: pointer; display: none; font-size: 14px;
-            background: rgba(0,0,0,0.6); border-radius: 50%; width: 20px; height: 20px;
-            align-items: center; justify-content: center; z-index: 5;
-        }
-        .drop-zone .activity-card:hover .delete-btn { display: flex; }
-
-        /* MODAL */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(3px);
-        }
-        .modal {
-            background: var(--panel);
-            width: 600px;
-            max-width: 90%;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            animation: modalFadeIn 0.2s ease-out;
-        }
-        @keyframes modalFadeIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .modal h2 { color: var(--primary); margin-bottom: 5px; font-size: 1.5rem; }
-        .modal .meta { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; display: flex; gap: 10px; }
-        .modal .meta span { background: #333; padding: 2px 8px; border-radius: 4px; color: #fff; }
-        .modal p { line-height: 1.7; margin-bottom: 15px; font-size: 1.05rem; white-space: pre-wrap; }
-        .close-modal {
-            background: var(--primary); color: #000; border: none;
-            padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; float: right; font-size: 1rem;
-        }
-        .close-modal:hover { background: #ffaf46; }
-
-        /* Read Only Mode Styles */
-        body.read-only .library { display: none; }
-        body.read-only .delete-btn { display: none !important; }
-        body.read-only .drop-zone { border-style: solid; border-color: #222; }
+        /* --- LEARN STYLES --- */
+        .sub-nav { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .sub-tab-btn { background: rgba(255,255,255,0.1); border: 1px solid transparent; color: #aaa; padding: 8px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-size: 0.9rem; }
+        .sub-tab-btn.active { background: var(--primary); color: #000; font-weight: bold; }
+        .learn-content { display: none; }
+        .learn-content.active { display: block; animation: fadeIn 0.3s; }
         
+        .letters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; }
+        .letter-card { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; }
+        .letter-big { font-size: 1.5rem; color: var(--primary); font-weight: bold; }
+        .letter-trans { font-size: 0.75rem; color: #888; margin-top: 2px; }
+        .letter-audio-mini { position: absolute; top: 5px; right: 5px; font-size: 0.7rem; color: #555; }
+        
+        .level-separator { font-size: 0.8rem; text-transform: uppercase; color: var(--accent); font-weight: bold; margin: 15px 0 5px; padding-bottom: 5px; border-bottom: 1px solid var(--accent); letter-spacing: 1px; }
+        .word-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .word-left { display: flex; align-items: center; gap: 10px; }
+        .audio-btn { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: var(--primary); cursor: pointer; font-size: 0.8rem; }
+        .topic-header { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 5px;}
+        .topic-body { display: none; padding: 10px; background: rgba(0,0,0,0.2); border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; margin-bottom: 10px; }
+        .topic-body.open { display: block; }
+
+        /* --- EXERCISES UI --- */
+        .ex-progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .ex-progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+        .ex-question-text { font-size: 1.3rem; margin-bottom: 20px; font-weight: bold; min-height: 60px; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .ex-instruction { color: #aaa; font-size: 0.9rem; margin-bottom: 10px; text-align: center; }
+
+        .quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .quiz-option { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; cursor: pointer; text-align: center; transition: 0.2s; border: 2px solid transparent; font-weight: bold; font-size: 1.1rem; }
+        .quiz-option.selected { border-color: var(--primary); background: rgba(212, 163, 115, 0.2); }
+        .quiz-option.correct { background: rgba(42, 157, 143, 0.8); border-color: var(--success); }
+        .quiz-option.wrong { background: rgba(230, 57, 70, 0.8); border-color: var(--error); }
+
+        .sentence-area { min-height: 50px; border-bottom: 2px solid rgba(255,255,255,0.2); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; padding: 5px; justify-content: center; }
+        .word-bank { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .word-chip { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 500; user-select: none; border: 1px solid transparent; }
+        .word-chip.used { opacity: 0; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary); color: #000; animation: popIn 0.2s; }
+        .ex-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid #555; color: #fff; font-size: 1.5rem; text-align: center; padding: 10px; outline: none; margin-bottom: 20px; }
+        
+        .feedback-sheet { display: none; margin-top: 20px; padding: 15px; border-radius: 12px; animation: slideUp 0.3s; }
+        .feedback-sheet.success { background: rgba(42, 157, 143, 0.2); border: 1px solid var(--success); }
+        .feedback-sheet.error { background: rgba(230, 57, 70, 0.2); border: 1px solid var(--error); }
+        
+        /* --- GAME CLUB UI --- */
+        .game-mode-card { background: rgba(255,255,255,0.05); border: 1px solid transparent; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .game-mode-card.selected { border-color: var(--primary); background: rgba(212, 163, 115, 0.1); }
+        .game-icon { width: 50px; height: 50px; background: rgba(0,0,0,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; color: var(--primary); }
+        .active-game-card { text-align: center; padding: 40px 20px; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(212, 163, 115, 0.1), rgba(0,0,0,0.5)); }
+        .game-word { font-size: 2.5rem; font-weight: bold; margin: 20px 0; color: #fff; text-shadow: 0 0 20px var(--primary); }
+        .game-timer { font-size: 1.5rem; font-family: monospace; color: var(--accent); border: 2px solid var(--accent); width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; }
+
+        /* --- MODAL --- */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-content { width: 95%; max-width: 500px; height: auto; max-height: 85vh; background: #1a1a1a; border-radius: 20px; padding: 25px; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: zoomIn 0.3s ease; overflow: hidden; }
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .close-modal { font-size: 1.5rem; color: #888; cursor: pointer; padding: 5px; }
+        .modal-scroll { overflow-y: auto; flex: 1; padding-right: 5px; }
+        .modal-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .m-tab { padding: 5px 10px; color: #888; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        .m-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .m-section { display: none; }
+        .m-section.active { display: block; }
+
+        .config-select { width: 100%; background: rgba(0,0,0,0.5); color: #fff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #555; }
+        .primary-btn { width: 100%; background: var(--primary); color: #000; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .check-btn { width: 100%; background: var(--success); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; margin-top: 20px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(42, 157, 143, 0.4); }
+        .check-btn:disabled { background: #555; cursor: not-allowed; box-shadow: none; color: #888; }
+        .next-btn { background: var(--primary); color: #000; box-shadow: 0 5px 15px rgba(212, 163, 115, 0.4); display: none; }
+        
+        /* Admin Panel styles */
+        .admin-panel { margin-top: 20px; padding: 15px; border: 1px dashed #555; border-radius: 10px; background: rgba(0,0,0,0.2); }
+        .admin-header { font-size: 0.9rem; color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+
     </style>
 </head>
 <body>
 
-<header>
-    <div class="brand">
-        <div class="logo-box">🏛️</div>
-        <h1>Вернатун<br><span>Армянский клуб</span></h1>
+    <div class="bg-overlay"></div>
+
+    <!-- SIDE NAV -->
+    <nav class="side-nav">
+        <div style="margin-bottom: 30px; font-weight: bold; color: var(--accent); font-size: 1.5rem;">V</div>
+        <div class="nav-item active" onclick="switchTab('schedule', 0, this)"><i class="far fa-calendar-alt"></i></div>
+        <div class="nav-item" onclick="switchTab('learn', 1, this)"><i class="fas fa-book"></i></div>
+        <div class="nav-item" onclick="switchTab('exercises', 2, this)"><i class="fas fa-puzzle-piece"></i></div>
+        <div class="nav-item" onclick="switchTab('games', 3, this)"><i class="fas fa-dice"></i></div>
+        <div class="nav-item" onclick="switchTab('voice', 4, this)"><i class="fas fa-microphone-alt"></i></div>
+        <div class="nav-item" onclick="switchTab('profile', 5, this)"><i class="far fa-user"></i></div>
+    </nav>
+
+    <!-- CONTENT -->
+    <div class="app-content">
+        <header>
+            <div class="brand">VERN<span style="color:var(--accent)">A</span>TUN</div>
+            <div class="xp-badge">⚡ <span id="xp-val">120</span> XP</div>
+        </header>
+
+        <main>
+            <!-- 1. SCHEDULE TAB -->
+            <div id="tab-schedule" class="section active">
+                <h2>📅 Ближайшие встречи</h2>
+                <div class="schedule-grid" id="schedule-container">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- 2. LEARN TAB -->
+            <div id="tab-learn" class="section">
+                <h2>📚 Учебные Материалы</h2>
+                <div class="sub-nav">
+                    <button class="sub-tab-btn active" onclick="switchLearnTab('letters', this)">🇦🇲 Алфавит</button>
+                    <button class="sub-tab-btn" onclick="switchLearnTab('words', this)">📖 Слова</button>
+                    <button class="sub-tab-btn" onclick="switchLearnTab('phrases', this)">💬 Фразы</button>
+                </div>
+                
+                <!-- Letters -->
+                <div id="learn-letters" class="learn-content active">
+                    <div class="glass-panel">
+                        <div class="letters-grid" id="alphabet-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Words -->
+                <div id="learn-words" class="learn-content">
+                    <div class="topic-header" onclick="toggleTopic(this)"><span>👨‍👩‍👧 Семья (Family)</span><i class="fas fa-chevron-down"></i></div>
+                    <div class="topic-body">
+                        <div class="level-separator">A1 - Начальный</div>
+                        <div class="word-item"><div class="word-left"><div class="audio-btn" onclick="playAudio('Մայր')"><i class="fas fa-volume-up"></i></div><div><div class="word-orig">Մայր</div><div class="word-trans">[Mayr]</div></div></div><div class="word-ru">Мать</div></div>
+                        <div class="word-item"><div class="word-left"><div class="audio-btn" onclick="playAudio('Հայր')"><i class="fas fa-volume-up"></i></div><div><div class="word-orig">Հայր</div><div class="word-trans">[Hayr]</div></div></div><div class="word-ru">Отец</div></div>
+                    </div>
+                </div>
+                
+                <!-- Phrases (UPDATED) -->
+                <div id="learn-phrases" class="learn-content">
+                     <div class="topic-header" onclick="toggleTopic(this)"><span>💬 Приветствия и Знакомство</span><i class="fas fa-chevron-down"></i></div>
+                     <div class="topic-body open">
+                         <div class="level-separator">A1 - Базовые фразы</div>
+                         <div class="word-item">
+                             <div class="word-left">
+                                 <div class="audio-btn" onclick="playAudio('Բարեւ, իմ անունը Աննա է')"><i class="fas fa-volume-up"></i></div>
+                                 <div><div class="word-orig">Բարեւ, իմ անունը... է:</div><div class="word-trans">[Barev, im anun'e ... e]</div></div>
+                             </div>
+                             <div class="word-ru">Привет, меня зовут...</div>
+                         </div>
+                         <div class="word-item">
+                            <div class="word-left">
+                                <div class="audio-btn" onclick="playAudio('Որտեղի՞ց ես')"><i class="fas fa-volume-up"></i></div>
+                                <div><div class="word-orig">Որտեղի՞ց ես:</div><div class="word-trans">[Vorteghic es?]</div></div>
+                            </div>
+                            <div class="word-ru">Откуда ты?</div>
+                        </div>
+                        
+                        <div class="level-separator">A2 - Поддержание диалога</div>
+                        <div class="word-item">
+                            <div class="word-left">
+                                <div class="audio-btn" onclick="playAudio('Ինչպե՞ս են գործերը')"><i class="fas fa-volume-up"></i></div>
+                                <div><div class="word-orig">Ինչպե՞ս են գործերը:</div><div class="word-trans">[Inchpes en gorcery?]</div></div>
+                            </div>
+                            <div class="word-ru">Как дела? (Как идут дела?)</div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+
+            <!-- 3. EXERCISES TAB (RESTORED) -->
+            <div id="tab-exercises" class="section">
+                <h2>🧩 Упражнения</h2>
+                <div id="ex-setup" class="glass-panel">
+                    <p style="margin-bottom:15px; color:#aaa;">Темы: Семья, Приветствия. 5 вопросов.</p>
+                    <button class="primary-btn" onclick="startExercise()">Начать Тренировку</button>
+                </div>
+                <div id="ex-interface" class="glass-panel" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; color:#888; margin-bottom:15px; align-items:center;">
+                        <span id="q-counter">Вопрос 1/5</span>
+                        <i class="fas fa-times" style="cursor:pointer;" onclick="stopExercise()"></i>
+                    </div>
+                    <div class="ex-progress-container"><div class="ex-progress-bar" id="ex-prog"></div></div>
+                    <div class="ex-instruction" id="ex-inst">Инструкция</div>
+                    <div class="ex-question-text" id="ex-text">Вопрос...</div>
+                    <div id="ex-content"></div>
+                    <div class="feedback-sheet" id="ex-feedback">
+                        <div class="fb-title" id="fb-title"></div>
+                        <div class="fb-text" id="fb-msg"></div>
+                    </div>
+                    <button class="check-btn" id="btn-check" onclick="checkAnswer()">Проверить</button>
+                    <button class="check-btn next-btn" id="btn-next" onclick="nextQuestion()">Далее <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <!-- 4. GAMES TAB (RESTORED) -->
+            <div id="tab-games" class="section">
+                <h2>🎲 Игровой Клуб</h2>
+                <div id="game-lobby" class="glass-panel">
+                    <h3 style="margin-bottom:15px; font-size:1rem; color:#aaa;">Выберите игру</h3>
+                    <div class="game-mode-card selected" onclick="selectGameMode(this, 'alias')">
+                        <div class="game-icon"><i class="fas fa-comments"></i></div>
+                        <div><b>Alias</b><br><span style="font-size:0.8rem; color:#888;">Объясни слова</span></div>
+                    </div>
+                    <div class="game-mode-card" onclick="selectGameMode(this, 'crocodile')">
+                        <div class="game-icon"><i class="fas fa-hands"></i></div>
+                        <div><b>Крокодил</b><br><span style="font-size:0.8rem; color:#888;">Только жесты</span></div>
+                    </div>
+                    <button class="primary-btn" onclick="initGame()" style="margin-top:15px;">Начать Игру</button>
+                </div>
+
+                <div id="game-active" class="glass-panel active-game-card" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                        <span style="color:var(--primary)">Ком 1: <b id="score-1">0</b></span>
+                        <span style="color:var(--accent)">Ком 2: <b id="score-2">0</b></span>
+                    </div>
+                    <div class="game-timer" id="timer-display">60</div>
+                    <div class="game-word" id="current-word">???</div>
+                    <div style="color:#aaa; font-size:0.9rem; margin-bottom:20px;" id="game-rule-text">...</div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                        <button class="primary-btn" style="background:#333;" onclick="handleGameGuess(false)">Пропуск</button>
+                        <button class="primary-btn" onclick="handleGameGuess(true)">Угадали!</button>
+                    </div>
+                    <button style="background:transparent; border:none; color:#555; margin-top:20px; text-decoration:underline;" onclick="exitGame()">Закончить игру</button>
+                </div>
+            </div>
+
+            <div id="tab-voice" class="section"><h2>🎙️ AI Voice</h2></div>
+            <div id="tab-profile" class="section"><h2>🏆 Профиль</h2></div>
+        </main>
     </div>
 
-    <!-- TABS -->
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('tue')" id="btn-tue">Вторник (Talk)</button>
-        <button class="tab-btn" onclick="switchTab('sat')" id="btn-sat">Суббота (Chill)</button>
-    </div>
+    <!-- MEETING MODAL (UPDATED) -->
+    <div class="modal-backdrop" id="meetingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 id="m-title" style="margin-bottom:5px; font-size:1.2rem;">...</h2>
+                    <p id="m-desc" style="color:#888; font-size:0.8rem; margin:0;">...</p>
+                </div>
+                <div class="close-modal" onclick="closeModal('meetingModal')">&times;</div>
+            </div>
 
-    <div class="controls">
-        <button class="btn-reset" onclick="clearSchedule()">Очистить</button>
-        <div class="switch-container">
-            <span>Просмотр</span>
-            <label class="switch">
-                <input type="checkbox" id="adminToggle" checked onchange="toggleMode()">
-                <span class="slider"></span>
-            </label>
-            <span>Редактор</span>
+            <div class="modal-tabs">
+                <div class="m-tab active" onclick="switchMTab(0)">⏳ План</div>
+                <div class="m-tab" onclick="switchMTab(1)">📎 Материалы</div>
+            </div>
+
+            <div class="modal-scroll">
+                <!-- Timeline Tab -->
+                <div id="mt-0" class="m-section active">
+                    <table class="plan-table" id="plan-table-body">
+                        <thead><tr><th>Время</th><th>Активность</th></tr></thead>
+                        <tbody><!-- Injected via JS --></tbody>
+                    </table>
+                    
+                    <div class="admin-panel">
+                        <div class="admin-header"><i class="fas fa-edit"></i> Редактор плана</div>
+                        <div class="admin-controls">
+                            <input type="time" class="admin-input" id="admin-time" value="20:00">
+                            <input type="text" class="admin-input" id="admin-act" placeholder="Описание этапа">
+                        </div>
+                        <button class="primary-btn" style="margin-top:10px; font-size:0.9rem; padding:8px;" onclick="addTimelineRow()">Добавить пункт</button>
+                    </div>
+                </div>
+                
+                <!-- Materials Tab -->
+                <div id="mt-1" class="m-section">
+                    <div id="m-files-list"></div>
+                    
+                    <div class="admin-panel">
+                        <div class="admin-header"><i class="fas fa-link"></i> Добавить материал</div>
+                        <div class="admin-controls">
+                            <input type="text" class="admin-input" id="admin-link-url" placeholder="URL (Youtube/Site)">
+                            <input type="text" class="admin-input" id="admin-link-title" placeholder="Название">
+                        </div>
+                         <button class="primary-btn" style="margin-top:10px; font-size:0.9rem; padding:8px;" onclick="addMaterialLink()">Добавить ссылку</button>
+                        
+                        <div style="border-top:1px solid #444; margin-top:15px; padding-top:15px;">
+                            <div class="file-drop" onclick="document.getElementById('admin-file-input').click()">
+                                <i class="fas fa-cloud-upload-alt"></i> Загрузить файл
+                            </div>
+                            <input type="file" id="admin-file-input" style="display:none" onchange="handleFileUpload(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</header>
 
-<div class="main-container">
-    <!-- LIBRARY (Draggable Items) -->
-    <div class="library" id="library">
-        <!-- Items will be injected by JS -->
-    </div>
-
-    <!-- TIMETABLE -->
-    <div class="timetable" id="timetable">
-        <div class="grid-header">
-            <div>Время</div>
-            <div class="col-header">Общий Зал<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Разминка / Финал</span></div>
-            <div class="col-header" style="border-bottom-color: var(--secondary)">Level A<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Новички / База</span></div>
-            <div class="col-header" style="border-bottom-color: var(--primary)">Level B<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Профи / Носители</span></div>
+    <!-- LETTER MODAL -->
+    <div class="modal-backdrop" id="letterModal">
+        <div class="modal-content" style="max-height:50vh;">
+            <div class="modal-header">
+                <span style="color:#aaa;">Детали буквы</span>
+                <div class="close-modal" onclick="closeModal('letterModal')">&times;</div>
+            </div>
+            <div class="letter-detail-view" id="letter-detail-content"></div>
         </div>
-        
-        <!-- Rows Generated by JS -->
     </div>
-</div>
-
-<!-- INFO MODAL -->
-<div class="modal-overlay" id="modal">
-    <div class="modal">
-        <h2 id="m-title">Название</h2>
-        <div class="meta" id="m-meta"></div>
-        <p id="m-desc">Описание...</p>
-        <button class="close-modal" onclick="closeModal()">Закрыть</button>
-    </div>
-</div>
 
 <script>
-    // --- 1. STATE & DATA ---
-    let currentTab = 'tue'; // 'tue' or 'sat'
-
-    const activities = [
-        // Warmup (Разогрев)
-        { 
-            id: 'ice1', title: 'Speed Dating', type: 'Warmup', color: '#ff7675', 
-            desc: 'Динамичное упражнение на снятие барьеров.\n\nМеханика:\nУчастники образуют два круга (внешний и внутренний). Каждые 2 минуты внешний круг сдвигается на одного человека. На проектор выводятся вопросы для обсуждения, например: "Твой любимый район Еревана и почему?", "Какое армянское блюдо ты готовил последним?".\n\nЦель: Быстро разговорить группу и познакомить всех.' 
-        },
-        { 
-            id: 'ice2', title: 'Две правды, одна ложь', type: 'Warmup', color: '#ff7675', 
-            desc: 'Классическая игра на знакомство.\n\nМеханика:\nКаждый участник пишет на листочке 3 факта о себе (2 правдивых, 1 вымышленный). Остальные задают наводящие вопросы на армянском (только Yes/No questions), пытаясь раскрыть ложь.\n\nЛексика: Вопросительные конструкции, глаголы действия.' 
-        },
-        { 
-            id: 'ice3', title: 'Human Bingo', type: 'Warmup', color: '#ff7675', 
-            desc: 'Активный поиск людей по критериям.\n\nМеханика:\nКаждый получает карточку с сеткой 4x4. В клетках написаны факты: "Умеет играть на дудуке", "Был в Гюмри", "Любит кинзу". Задача: ходить по залу, опрашивать людей на армянском и вписывать имена тех, кто соответствует описанию.\n\nЦель: Собрать линию (Bingo) первым.' 
-        },
-        { 
-            id: 'ice4', title: 'Снежный ком имен', type: 'Warmup', color: '#ff7675', 
-            desc: 'Тренировка памяти и имен.\n\nМеханика:\nПервый говорит: "Я Армен, люблю абрикосы". Второй: "Это Армен, он любит абрикосы, а я Ани, люблю Арарат". Третий должен повторить двоих предыдущих и добавить себя.\n\nСовет: Добавлять прилагательные на ту же букву, что и имя.' 
-        },
-
-        // Speaking Active
-        { 
-            id: 'sp1', title: 'Ролевая: Разговорчивый таксист', type: 'Speaking', color: '#74b9ff', 
-            desc: 'Симуляция жизненной ситуации.\n\nРоли:\n1. Таксист (должен узнать о пассажире всё: женат/замужем, где работает, сколько получает).\n2. Пассажир (спешит, отвечает коротко, но вежливо).\n\nЗадача: Таксист должен составить досье на пассажира за 5 минут поездки.' 
-        },
-        { 
-            id: 'sp2', title: 'Ролевая: Торг на Вернисаже', type: 'Speaking', color: '#74b9ff', 
-            desc: 'Практика числительных и убеждения.\n\nРоли:\n1. Продавец сувениров (завышает цену в 3 раза).\n2. Турист (хочет купить дешевле).\n\nЗадача: Договориться о финальной цене. Используем фразы: "Tang e" (Дорого), "Ijecreq gine" (Скиньте цену).' 
-        },
-        { 
-            id: 'sp3', title: 'Шуточные Дебаты', type: 'Speaking', color: '#74b9ff', 
-            desc: 'Аргументация в веселом формате.\n\nТемы:\n- Лаваш лучше матнакаша?\n- Долма с виноградными листьями или капустой?\n- Жить с родителями: за и против.\n\nМеханика: Группа делится на команды. Дается 5 минут на подготовку аргументов. Модератор следит за таймингом.' 
-        },
-        { 
-            id: 'sp4', title: 'Alibi (Детектив)', type: 'Speaking', color: '#74b9ff', 
-            desc: 'Игра на внимательность к деталям.\n\nМеханика:\nДвое "подозреваемых" выходят из комнаты и придумывают алиби (что они делали вчера с 18:00 до 20:00). Группа "следователей" допрашивает их ПО ОТДЕЛЬНОСТИ. Любое несовпадение в показаниях означает проигрыш.\n\nВопросы: Во что был одет? Что заказывали? Кто платил?' 
-        },
-        { 
-            id: 'sp5', title: 'Интервью со звездой', type: 'Speaking', color: '#74b9ff', 
-            desc: 'Один участник вживается в роль знаменитости (Шер, Азнавур, Ким, Пашинян). Остальные - журналисты на пресс-конференции.\n\nЦель: Задавать каверзные вопросы.' 
-        },
-
-        // Games
-        { 
-            id: 'gm1', title: 'Mafia (Armenian)', type: 'Game', color: '#a29bfe', 
-            desc: 'Легендарная игра, адаптированная под клуб.\n\nПравило №1: НИ СЛОВА ПО-РУССКИ. Штраф - вылет из игры.\n\nФразы:\n- "Es kaskatsum em..." (Я подозреваю)\n- "Na stum e" (Он/она врет)\n- "Qaxaqe qnac e" (Город спит)\n\nРазвивает навыки убеждения и оправдания.' 
-        },
-        { 
-            id: 'gm2', title: 'Alias / Taboo', type: 'Game', color: '#a29bfe', 
-            desc: 'Объяснение слов на время.\n\nМеханика:\nИгрок берет карточку и должен объяснить слово, не используя однокоренные. Например, объяснить слово "Севан", не говоря "Озеро", "Вода", "Рыба".\n\nДинамично, весело, расширяет словарный запас.' 
-        },
-        { 
-            id: 'gm3', title: 'Just a Minute', type: 'Game', color: '#a29bfe', 
-            desc: 'Ораторское искусство.\n\nЗадача:\nГоворить на выпавшую тему (например, "Абрикос", "Метро", "Свадьба") ровно 1 минуту. Нельзя: делать паузы больше 3 сек, повторять слова, использовать слова-паразиты.' 
-        },
-        { 
-            id: 'gm4', title: 'Крокодил (Пантомима)', type: 'Game', color: '#a29bfe', 
-            desc: 'Показать слово или пословицу жестами. Группа должна угадать и назвать это на армянском.' 
-        },
-
-        // Media
-        { 
-            id: 'med1', title: 'Кино-озвучка', type: 'Media', color: '#fdcb6e', 
-            desc: 'Творческое задание.\n\nМеханика:\nБерем сцену из "Мужчины" (Tghamardik) или "Мимино". Смотрим оригинал. Выключаем звук. Участники получают текст или импровизируют, озвучивая героев в микрофон. Можно менять жанр (превратить драму в комедию).' 
-        },
-        { 
-            id: 'med2', title: 'Разбор Клипа', type: 'Media', color: '#fdcb6e', 
-            desc: 'Работа с текстом песни.\n\nМатериал: Malena, Sirusho, Aram MP3.\n1. Слушаем.\n2. Читаем текст, разбираем сленг.\n3. Поем припев хором.' 
-        },
-        { 
-            id: 'med3', title: 'Кино-Квиз', type: 'Media', color: '#fdcb6e', 
-            desc: 'Викторина по армянскому кино.\nРаунды:\n- Угадай фильм по кадру.\n- Продолжи цитату.\n- Правда или ложь об актере.' 
-        },
-
-        // Level A (Beginners)
-        { 
-            id: 'beg1', title: 'Алфавит-Ассоциации', type: 'Level A', color: '#55efc4', 
-            desc: 'Для тех, кто не умеет читать.\n\nМетод:\nПоказываем букву и картинку, на что она похожа (Ш - перевернутая М, Ռ - как R на ножках). Рисуем буквы.' 
-        },
-        { 
-            id: 'beg2', title: 'Базовые фразы (Drill)', type: 'Level A', color: '#55efc4', 
-            desc: 'Интенсивное повторение.\n\nТемы:\n- Приветствие / Прощание\n- Как дела?\n- Счет до 100\n- Заказ еды\n\nРаботаем хором и по парам.' 
-        },
-        { 
-            id: 'beg3', title: 'Чтение сказки', type: 'Level A', color: '#55efc4', 
-            desc: 'Медленное чтение.\n\nМатериал: Адаптированные сказки Ованеса Туманяна. Читаем по предложению, переводим каждое слово.' 
-        },
-
-        // Level B (Advanced)
-        { 
-            id: 'adv1', title: 'Полит. Дебаты', type: 'Level B', color: '#fab1a0', 
-            desc: 'Для продвинутых и носителей.\n\nОбсуждение актуальных новостей Армении и мира. Запрещено использовать примитивную лексику. Модератор вбрасывает сложные термины, которые нужно использовать.' 
-        },
-        { 
-            id: 'adv2', title: 'Угадай Диалект', type: 'Level B', color: '#fab1a0', 
-            desc: 'Аудирование сложного уровня.\n\nСлушаем аудиозаписи речи из Гюмри, Арцаха, Гавара, Лори. Пытаемся понять смысл и "перевести" на литературный армянский.' 
-        },
-        { 
-            id: 'adv3', title: 'Литературный клуб', type: 'Level B', color: '#fab1a0', 
-            desc: 'Чтение поэзии.\n\nАвторы: Паруйр Севак, Егише Чаренц. Анализ метафор и глубокого смысла.' 
-        }
+    // --- GLOBAL DATA ---
+    const alphabet = [
+        { l: "Ա ա", t: "a", ex: "Արեւ (Солнце)" }, { l: "Բ բ", t: "b", ex: "Բարեւ (Привет)" }, 
+        { l: "Գ գ", t: "g", ex: "Գարուն (Весна)" }, { l: "Դ դ", t: "d", ex: "Դաս (Урок)" },
+        { l: "Ե ե", t: "ye/e", ex: "Երազ (Сон)" }, { l: "Զ զ", t: "z", ex: "Զանգ (Звонок)" },
+        { l: "Է է", t: "e", ex: "Էջ (Страница)" }, { l: "Ը ը", t: "ə", ex: "Ընկեր (Друг)" },
+        { l: "Թ թ", t: "t'", ex: "Թիվ (Число)" }, { l: "Ժ ժ", t: "zh", ex: "Ժամ (Час)" },
+        { l: "Ի ի", t: "i", ex: "Ինչու (Почему)" }, { l: "Լ լ", t: "l", ex: "Լույս (Свет)" },
+        { l: "Խ խ", t: "kh", ex: "Խաղ (Игра)" }, { l: "Ծ ծ", t: "ts", ex: "Ծառ (Дерево)" },
+        { l: "Կ կ", t: "k", ex: "Կատու (Кот)" }, { l: "Հ հ", t: "h", ex: "Հայ (Армянин)" },
+        { l: "Ձ ձ", t: "dz", ex: "Ձուկ (Рыба)" }, { l: "Ղ ղ", t: "gh", ex: "Ղեկ (Руль)" },
+        { l: "Ճ ճ", t: "ch", ex: "Ճաշ (Обед)" }, { l: "Մ մ", t: "m", ex: "Մայր (Мать)" },
+        { l: "Յ յ", t: "y", ex: "Յոթ (Семь)" }, { l: "Ն ն", t: "n", ex: "Նավ (Корабль)" },
+        { l: "Շ շ", t: "sh", ex: "Շուն (Собака)" }, { l: "Ո ո", t: "vo/o", ex: "Ոսկի (Золото)" },
+        { l: "Չ չ", t: "ch'", ex: "Չորս (Четыре)" }, { l: "Պ պ", t: "p", ex: "Պապիկ (Дед)" },
+        { l: "Ջ ջ", t: "j", ex: "Ջուր (Вода)" }, { l: "Ռ ռ", t: "r", ex: "Ռուս (Русский)" },
+        { l: "Ս ս", t: "s", ex: "Սեր (Любовь)" }, { l: "Վ վ", t: "v", ex: "Վարդ (Роза)" },
+        { l: "Տ տ", t: "t", ex: "Տուն (Дом)" }, { l: "Ր ր", t: "r'", ex: "Րոպե (Минута)" },
+        { l: "Ց ց", t: "ts'", ex: "Ցուրտ (Холод)" }, { l: "Ւ ւ", t: "v/u", ex: "-" },
+        { l: "Փ փ", t: "p'", ex: "Փող (Деньги)" }, { l: "Ք ք", t: "k'", ex: "Քաղաք (Город)" },
+        { l: "Օ օ", t: "o", ex: "Օր (День)" }, { l: "Ֆ ֆ", t: "f", ex: "Ֆուտբոլ (Футбол)" }
     ];
 
-    // --- 2. INIT & RENDER ---
-    const libraryEl = document.getElementById('library');
-    const timetableEl = document.getElementById('timetable');
-    
-    // Fill Library
-    function renderLibrary() {
-        // Group by type helper
-        const groups = {
-            'Warmup': [], 'Speaking': [], 'Game': [], 'Media': [], 'Level A': [], 'Level B': []
-        };
-        
-        activities.forEach(act => {
-            if (groups[act.type]) groups[act.type].push(act);
-        });
+    const meetings = [
+        { id: 1, date: "15 Окт", time: "19:00", title: "Семья (Ընտանիք)", loc: "Zoom", desc: "Лексика: Родственники", plan: [{t:"19:00", a:"Приветствие"}, {t:"19:15", a:"Лексика"}, {t:"20:00", a:"Финал"}] },
+        { id: 2, date: "18 Окт", time: "20:00", title: "Mafia Night", loc: "Yerevan Cafe", desc: "Играем в Мафию", plan: [{t:"20:00", a:"Правила"}, {t:"20:30", a:"Игра 1"}] },
+        { id: 3, date: "22 Окт", time: "19:00", title: "Еда и Кухня", loc: "Zoom", desc: "Лексика: Продукты", plan: [] },
+        { id: 4, date: "25 Окт", time: "18:00", title: "Киноклуб", loc: "Loft Room", desc: "Смотрим 'Мы и наши горы'", plan: [] },
+        { id: 5, date: "29 Окт", time: "19:00", title: "Путешествия", loc: "Zoom", desc: "Глаголы движения", plan: [] },
+        { id: 6, date: "01 Ноя", time: "20:00", title: "Debate Club", loc: "Coworking", desc: "Тема: Технологии", plan: [] }
+    ];
 
-        const sectionOrder = ['Warmup', 'Speaking', 'Game', 'Media', 'Level A', 'Level B'];
-        const sectionTitles = {
-            'Warmup': '🔥 Упражнения на разогрев', 
-            'Speaking': '🗣️ Активная практика', 
-            'Game': '🎲 Игры', 
-            'Media': '🎬 Медиа / Кино', 
-            'Level A': '🌱 Для Новичков (A1)', 
-            'Level B': '🦁 Для Профи (B2+)'
-        };
+    // --- INIT ---
+    window.onload = function() {
+        renderSchedule();
+        renderAlphabet();
+    };
 
-        libraryEl.innerHTML = '<div style="font-size: 0.8rem; color: #888; margin-bottom: 10px; text-align: center;">Тяни карточку в расписание ➔</div>';
-
-        sectionOrder.forEach(type => {
-            if (groups[type].length > 0) {
-                const header = document.createElement('div');
-                header.className = 'lib-header';
-                header.innerText = sectionTitles[type];
-                libraryEl.appendChild(header);
-
-                groups[type].forEach(act => {
-                    const el = createCardElement(act);
-                    libraryEl.appendChild(el);
-                });
-            }
-        });
+    function renderSchedule() {
+        document.getElementById('schedule-container').innerHTML = meetings.map(m => `
+            <div class="schedule-card" onclick="openMeeting(${m.id})">
+                <div><div class="sc-date"><i class="far fa-calendar"></i> ${m.date}</div><div class="sc-title">${m.title}</div></div>
+                <div class="sc-loc"><i class="fas fa-map-marker-alt"></i> ${m.loc} • ${m.time}</div>
+            </div>
+        `).join('');
     }
 
-    function createCardElement(act, inGrid = false) {
-        const div = document.createElement('div');
-        div.className = 'activity-card';
-        div.draggable = true;
-        div.dataset.id = act.id;
-        div.style.borderLeftColor = act.color;
-        
-        // Preview text is only shown in library, not in grid to save space
-        const preview = inGrid ? '' : `<div class="preview-text">${act.desc}</div>`;
-
-        div.innerHTML = `
-            <h4>${act.title}</h4>
-            <div class="tag" style="background:${act.color}40; color:${act.color}">${act.type}</div>
-            ${preview}
-            <div class="delete-btn" onclick="removeCard(this, event)">×</div>
-        `;
-        
-        // Drag Events
-        div.addEventListener('dragstart', handleDragStart);
-        div.addEventListener('click', () => showDetails(act.id));
-        
-        return div;
+    function renderAlphabet() {
+        document.getElementById('alphabet-grid').innerHTML = alphabet.map((l, idx) => `
+            <div class="letter-card" onclick="openLetter(${idx})">
+                <div class="letter-audio-mini" onclick="event.stopPropagation(); playAudio('${l.l.charAt(0)}')"><i class="fas fa-volume-up"></i></div>
+                <div class="letter-big">${l.l}</div><div class="letter-trans">[${l.t}]</div>
+            </div>
+        `).join('');
     }
 
-    // Updated Time Slots
-    const timeSlots = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
-    
-    function renderGrid() {
-        timetableEl.innerHTML = ''; // Clear existing
-        
-        // Re-add header
-        timetableEl.innerHTML = `
-        <div class="grid-header">
-            <div>Время</div>
-            <div class="col-header">Общий Зал<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Разминка / Финал</span></div>
-            <div class="col-header" style="border-bottom-color: var(--secondary)">Level A<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Новички / База</span></div>
-            <div class="col-header" style="border-bottom-color: var(--primary)">Level B<br><span style="font-size:0.75rem; color:#888; font-weight:normal">Профи / Носители</span></div>
-        </div>`;
+    // --- EXERCISE LOGIC (RESTORED) ---
+    const exerciseDB = [
+        { type: 'quiz', instruction: 'Выберите правильный перевод', question: 'Как будет "Отец"?', options: ['Մայր', 'Հայր', 'Տատիկ', 'Եղբայր'], correctIndex: 1, explanation: 'Հայր - Отец.' },
+        { type: 'order', instruction: 'Соберите предложение', question: 'Переведите: "Я в порядке"', words: ['Ես', 'տուն', 'լավ', 'եմ'], correctOrder: ['Ես', 'լավ', 'եմ'], explanation: 'Подлежащее + Сказуемое.' },
+        { type: 'input', instruction: 'Напишите слово', question: 'Переведите "Мама" (на армянском)', correctAnswer: 'Մայր', explanation: 'Пишется Մ-ա-յ-ր.' }
+    ];
+    let currentExIndex = 0; let userSelection = null; let isChecked = false;
 
-        timeSlots.forEach(time => {
-            const row = document.createElement('div');
-            row.className = 'time-row';
-            
-            // Time Label
-            row.innerHTML = `<div class="time-label">${time}</div>`;
-            
-            // 3 Drop Zones
-            const zones = ['common', 'level-a', 'level-b'];
-            zones.forEach(zone => {
-                const dropEl = document.createElement('div');
-                dropEl.className = `drop-zone zone-${zone}`;
-                dropEl.dataset.time = time;
-                dropEl.dataset.zone = zone;
-                
-                // Drag Events
-                dropEl.addEventListener('dragover', handleDragOver);
-                dropEl.addEventListener('dragleave', handleDragLeave);
-                dropEl.addEventListener('drop', handleDrop);
-                
-                row.appendChild(dropEl);
+    function startExercise() {
+        document.getElementById('ex-setup').style.display = 'none';
+        document.getElementById('ex-interface').style.display = 'block';
+        currentExIndex = 0; loadExercise(0);
+    }
+    function stopExercise() {
+        document.getElementById('ex-interface').style.display = 'none';
+        document.getElementById('ex-setup').style.display = 'block';
+    }
+    function loadExercise(idx) {
+        if(idx >= exerciseDB.length) { alert("Тренировка окончена!"); stopExercise(); return; }
+        const data = exerciseDB[idx]; currentExIndex = idx; userSelection = null; isChecked = false;
+        
+        document.getElementById('ex-feedback').style.display = 'none';
+        document.getElementById('btn-check').style.display = 'block'; document.getElementById('btn-check').disabled = true;
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('q-counter').innerText = `Вопрос ${idx+1}/${exerciseDB.length}`;
+        document.getElementById('ex-prog').style.width = `${(idx / exerciseDB.length) * 100}%`;
+        document.getElementById('ex-inst').innerText = data.instruction;
+        document.getElementById('ex-text').innerText = data.question;
+        const content = document.getElementById('ex-content'); content.innerHTML = '';
+
+        if(data.type === 'quiz') {
+            const grid = document.createElement('div'); grid.className = 'quiz-grid';
+            data.options.forEach((opt, i) => {
+                const btn = document.createElement('div'); btn.className = 'quiz-option'; btn.innerText = opt;
+                btn.onclick = () => selectQuizOption(i, btn); grid.appendChild(btn);
             });
-            
-            timetableEl.appendChild(row);
-        });
-        loadSchedule(); // Load saved data for current tab
-    }
-
-    // --- 3. DRAG & DROP LOGIC ---
-    let draggedItem = null;
-
-    function handleDragStart(e) {
-        if (!document.getElementById('adminToggle').checked) {
-            e.preventDefault();
-            return;
-        }
-        draggedItem = this;
-        e.dataTransfer.setData('text/plain', this.dataset.id);
-        e.dataTransfer.effectAllowed = 'copy';
-    }
-
-    function handleDragOver(e) {
-        if (!document.getElementById('adminToggle').checked) return;
-        e.preventDefault();
-        this.classList.add('drag-over');
-    }
-
-    function handleDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-
-    function handleDrop(e) {
-        e.preventDefault();
-        this.classList.remove('drag-over');
-        
-        const id = e.dataTransfer.getData('text/plain');
-        const act = activities.find(a => a.id === id);
-        
-        if (act) {
-            // Create a copy of the card for the grid
-            const newCard = createCardElement(act, true);
-            this.appendChild(newCard);
-            saveSchedule();
+            content.appendChild(grid); userSelection = -1;
+        } else if (data.type === 'order') {
+            userSelection = []; const area = document.createElement('div'); area.className = 'sentence-area'; area.id = 'sentence-area'; content.appendChild(area);
+            const bank = document.createElement('div'); bank.className = 'word-bank';
+            data.words.forEach((word, i) => {
+                const chip = document.createElement('div'); chip.className = 'word-chip'; chip.innerText = word; chip.id = `word-${i}`;
+                chip.onclick = () => addToSentence(word, i, chip); bank.appendChild(chip);
+            });
+            content.appendChild(bank);
+        } else if (data.type === 'input') {
+            const inp = document.createElement('input'); inp.type = 'text'; inp.className = 'ex-input'; inp.placeholder = 'Ответ...';
+            inp.oninput = (e) => { userSelection = e.target.value.trim(); document.getElementById('btn-check').disabled = userSelection.length === 0; };
+            content.appendChild(inp); userSelection = '';
         }
     }
-
-    function removeCard(btn, e) {
-        e.stopPropagation(); // prevent modal opening
-        if (!document.getElementById('adminToggle').checked) return;
-        btn.parentElement.remove();
-        saveSchedule();
-    }
-
-    // --- 4. MODAL LOGIC ---
-    const modal = document.getElementById('modal');
-    
-    function showDetails(id) {
-        const act = activities.find(a => a.id === id);
-        if(!act) return;
-
-        document.getElementById('m-title').innerText = act.title;
-        const metaEl = document.getElementById('m-meta');
-        metaEl.innerHTML = `<span style="background:${act.color}">${act.type}</span>`;
+    function selectQuizOption(idx, el) { if(isChecked) return; document.querySelectorAll('.quiz-option').forEach(b => b.classList.remove('selected')); el.classList.add('selected'); userSelection = idx; document.getElementById('btn-check').disabled = false; }
+    function addToSentence(word, id, el) { if(isChecked) return; userSelection.push(word); updateSentenceArea(); el.classList.add('used'); document.getElementById('btn-check').disabled = userSelection.length === 0; }
+    function updateSentenceArea() { const area = document.getElementById('sentence-area'); area.innerHTML = ''; userSelection.forEach((w) => { const chip = document.createElement('div'); chip.className = 'word-chip in-sentence'; chip.innerText = w; area.appendChild(chip); }); }
+    function checkAnswer() {
+        isChecked = true; const data = exerciseDB[currentExIndex]; let isCorrect = false;
+        if(data.type === 'quiz') isCorrect = (userSelection === data.correctIndex);
+        else if(data.type === 'order') isCorrect = (userSelection.join(' ') === data.correctOrder.join(' '));
+        else if(data.type === 'input') isCorrect = (userSelection.toLowerCase() === data.correctAnswer.toLowerCase());
         
-        document.getElementById('m-desc').innerText = act.desc;
-        document.getElementById('m-title').style.color = act.color;
-        
-        modal.style.display = 'flex';
+        const fb = document.getElementById('ex-feedback'); fb.style.display = 'block'; fb.className = isCorrect ? 'feedback-sheet success' : 'feedback-sheet error';
+        document.getElementById('fb-title').innerHTML = isCorrect ? 'Верно!' : 'Ошибка';
+        document.getElementById('fb-msg').innerText = isCorrect ? "Отлично! " + data.explanation : data.explanation;
+        document.getElementById('btn-check').style.display = 'none'; document.getElementById('btn-next').style.display = 'block';
     }
+    function nextQuestion() { loadExercise(currentExIndex + 1); }
 
-    function closeModal() {
-        modal.style.display = 'none';
+    // --- GAME LOGIC (RESTORED) ---
+    let gameState = { active: false, mode: 'alias', score: {1:0, 2:0}, timer: 60, interval: null, words: ["Մայր", "Հայր", "Տուն", "Ընտանիք"] };
+    function selectGameMode(el, mode) { document.querySelectorAll('.game-mode-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); gameState.mode = mode; }
+    function initGame() {
+        gameState.active = true; gameState.score = {1:0, 2:0}; gameState.timer = 60;
+        document.getElementById('game-lobby').style.display = 'none'; document.getElementById('game-active').style.display = 'block';
+        updateScoreUI(); startRound();
     }
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    // --- 5. TABS & STORAGE ---
-    
-    function switchTab(tab) {
-        currentTab = tab;
-        
-        // Update UI buttons
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${tab}`).classList.add('active');
-        
-        // Reload Grid
-        renderGrid();
+    function startRound() {
+        clearInterval(gameState.interval); gameState.timer = 60; document.getElementById('timer-display').innerText = 60;
+        document.getElementById('game-rule-text').innerText = gameState.mode === 'alias' ? "Объясни словами" : "Покажи жестами";
+        nextGameWord();
+        gameState.interval = setInterval(() => { gameState.timer--; document.getElementById('timer-display').innerText = gameState.timer; if(gameState.timer<=0) { alert("Время!"); startRound(); } }, 1000);
     }
+    function nextGameWord() { document.getElementById('current-word').innerText = gameState.words[Math.floor(Math.random()*gameState.words.length)]; }
+    function handleGameGuess(success) { if(success) gameState.score[1] += 10; updateScoreUI(); nextGameWord(); } // Simplified score
+    function updateScoreUI() { document.getElementById('score-1').innerText = gameState.score[1]; document.getElementById('score-2').innerText = gameState.score[2]; }
+    function exitGame() { clearInterval(gameState.interval); document.getElementById('game-active').style.display = 'none'; document.getElementById('game-lobby').style.display = 'block'; }
 
-    function toggleMode() {
-        const isAdmin = document.getElementById('adminToggle').checked;
-        if (isAdmin) {
-            document.body.classList.remove('read-only');
+    // --- MODAL & ADMIN LOGIC ---
+    let currentMeetingId = null;
+    function openMeeting(id) {
+        currentMeetingId = id; const m = meetings.find(x => x.id === id);
+        document.getElementById('m-title').innerText = m.title; document.getElementById('m-desc').innerText = m.desc;
+        switchMTab(0);
+        
+        // Render Table
+        const tbody = document.querySelector('#plan-table-body tbody');
+        tbody.innerHTML = '';
+        if(m.plan && m.plan.length > 0) {
+            m.plan.forEach(row => {
+                tbody.innerHTML += `<tr><td>${row.t}</td><td>${row.a}</td></tr>`;
+            });
         } else {
-            document.body.classList.add('read-only');
+            tbody.innerHTML = `<tr><td colspan="2" style="color:#666; text-align:center;">План не заполнен</td></tr>`;
+        }
+
+        document.getElementById('m-files-list').innerHTML = `<div style="color:#666; font-size:0.9rem; margin-bottom:10px;">Нет материалов</div>`;
+        document.getElementById('meetingModal').style.display = 'flex';
+    }
+
+    function addTimelineRow() {
+        const t = document.getElementById('admin-time').value;
+        const a = document.getElementById('admin-act').value;
+        if(!t || !a) return;
+        
+        // In real app, save to DB. Here, just append to DOM.
+        const tbody = document.querySelector('#plan-table-body tbody');
+        if(tbody.innerText.includes("План не заполнен")) tbody.innerHTML = '';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${t}</td><td>${a}</td>`;
+        tbody.appendChild(tr);
+        
+        // Update data object
+        const m = meetings.find(x => x.id === currentMeetingId);
+        if(!m.plan) m.plan = [];
+        m.plan.push({t: t, a: a});
+        
+        document.getElementById('admin-act').value = '';
+    }
+
+    function addMaterialLink() {
+        const url = document.getElementById('admin-link-url').value;
+        const title = document.getElementById('admin-link-title').value;
+        if(!url || !title) return;
+        
+        const list = document.getElementById('m-files-list');
+        if(list.innerText.includes("Нет материалов")) list.innerHTML = '';
+        
+        const div = document.createElement('div');
+        div.style.background = "rgba(255,255,255,0.05)"; div.style.padding = "10px"; div.style.marginBottom = "5px"; div.style.borderRadius = "8px";
+        let icon = url.includes('youtube') ? 'fa-youtube' : 'fa-link';
+        let color = url.includes('youtube') ? 'red' : 'var(--primary)';
+        
+        div.innerHTML = `<a href="${url}" target="_blank" style="color:#fff; text-decoration:none; display:flex; align-items:center;"><i class="fab ${icon}" style="color:${color}; margin-right:10px;"></i> ${title}</a>`;
+        list.appendChild(div);
+        
+        document.getElementById('admin-link-url').value = ''; document.getElementById('admin-link-title').value = '';
+    }
+
+    function handleFileUpload(input) {
+        if(input.files && input.files[0]) {
+            const list = document.getElementById('m-files-list');
+            if(list.innerText.includes("Нет материалов")) list.innerHTML = '';
+            const div = document.createElement('div');
+            div.style.background = "rgba(255,255,255,0.05)"; div.style.padding = "10px"; div.style.marginBottom = "5px"; div.style.borderRadius = "8px";
+            div.innerHTML = `<i class="fas fa-file-alt" style="color:var(--primary)"></i> <span style="margin-left:5px">${input.files[0].name}</span>`;
+            list.appendChild(div);
         }
     }
 
-    function saveSchedule() {
-        const schedule = [];
-        const rows = document.querySelectorAll('.time-row');
-        
-        rows.forEach(row => {
-            const zones = row.querySelectorAll('.drop-zone');
-            zones.forEach(zone => {
-                const cards = zone.querySelectorAll('.activity-card');
-                cards.forEach(card => {
-                    schedule.push({
-                        time: zone.dataset.time,
-                        zone: zone.dataset.zone,
-                        actId: card.dataset.id
-                    });
-                });
-            });
-        });
-        
-        // Save with key specific to current tab
-        localStorage.setItem(`vernatun_${currentTab}`, JSON.stringify(schedule));
-    }
-
-    function loadSchedule() {
-        const saved = localStorage.getItem(`vernatun_${currentTab}`);
-        if (!saved) return;
-        
-        const schedule = JSON.parse(saved);
-        
-        schedule.forEach(item => {
-            // Find the zone
-            const zoneEl = document.querySelector(`.drop-zone[data-time="${item.time}"][data-zone="${item.zone}"]`);
-            // Find activity data
-            const act = activities.find(a => a.id === item.actId);
-            
-            if (zoneEl && act) {
-                const card = createCardElement(act, true);
-                zoneEl.appendChild(card);
-            }
-        });
-    }
-
-    function clearSchedule() {
-        if(!confirm(`Очистить расписание для вкладки: ${currentTab === 'tue' ? 'Вторник' : 'Суббота'}?`)) return;
-        const zones = document.querySelectorAll('.drop-zone');
-        zones.forEach(z => z.innerHTML = '');
-        localStorage.removeItem(`vernatun_${currentTab}`);
-    }
-
-    // Init
-    renderLibrary();
-    renderGrid();
+    // --- HELPERS ---
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function switchTab(id, bgIndex, el) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.getElementById(`tab-${id}`).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); const bgs=['https://images.unsplash.com/photo-1526721966451-2a6288597f7f?q=80&w=1000','https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=1000','https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000','https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1000','https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=1000','https://images.unsplash.com/photo-1483058712412-4245e9b90334?q=80&w=1000']; document.body.style.backgroundImage = `url(${bgs[bgIndex]})`; }
+    function switchLearnTab(tabName, btn) { document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.learn-content').forEach(c => c.classList.remove('active')); document.getElementById(`learn-${tabName}`).classList.add('active'); }
+    function toggleTopic(header) { const body = header.nextElementSibling; const icon = header.querySelector('i'); if (body.style.display === 'block') { body.style.display = 'none'; icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down'); } else { body.style.display = 'block'; icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up'); } }
+    function switchMTab(idx) { document.querySelectorAll('.m-tab').forEach((t, i) => t.classList.toggle('active', i === idx)); document.querySelectorAll('.m-section').forEach((s, i) => s.classList.toggle('active', i === idx)); }
+    function openLetter(idx) { const l = alphabet[idx]; document.getElementById('letter-detail-content').innerHTML = `<div class="ld-main">${l.l}</div><div class="ld-trans">[${l.t}]</div><button class="primary-btn" style="width:auto; margin-bottom:20px;" onclick="playAudio('${l.l.charAt(0)}')"><i class="fas fa-play"></i> Слушать</button><div class="ld-examples"><div style="font-size:0.8rem; color:#888; margin-bottom:5px;">ПРИМЕРЫ:</div><div class="ld-row"><span style="color:#fff; font-weight:bold;">${l.ex.split(' ')[0]}</span><span style="color:#aaa;">${l.ex.split(' ').slice(1).join(' ')}</span></div></div>`; document.getElementById('letterModal').style.display = 'flex'; playAudio(l.l.charAt(0)); }
+    function playAudio(text) { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(text); u.lang = 'hy-AM'; window.speechSynthesis.speak(u); } }
 
 </script>
-
 </body>
-
 </html>
